@@ -42,6 +42,15 @@ ttc-gtfs-qa-validation/
 │   └── gtfs_static/           # place GTFS .txt files here (not committed)
 ├── outputs/                   # generated after running tests (not committed)
 ├── src/
+│   ├── run_tests.py           # compatibility entrypoint
+│   └── ttc_gtfs_qa/
+│       ├── cli.py
+│       ├── io.py
+│       ├── reporting.py
+│       └── validators/
+│           ├── foreign_keys.py
+│           ├── keys.py
+│           └── sequencing.py
 │   └── run_tests.py           # main validation script
 ├── requirements.txt
 └── README.md
@@ -76,6 +85,12 @@ Place the following files in `data/gtfs_static/`:
 
 ## Run
 
+From the repository root (either command works):
+
+```bash
+python src/run_tests.py
+# or
+PYTHONPATH=src python -m ttc_gtfs_qa.cli
 From the repository root:
 
 ```bash
