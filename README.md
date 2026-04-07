@@ -51,6 +51,7 @@ ttc-gtfs-qa-validation/
 │           ├── foreign_keys.py
 │           ├── keys.py
 │           └── sequencing.py
+│   └── run_tests.py           # main validation script
 ├── requirements.txt
 └── README.md
 ```
@@ -90,6 +91,10 @@ From the repository root (either command works):
 python src/run_tests.py
 # or
 PYTHONPATH=src python -m ttc_gtfs_qa.cli
+From the repository root:
+
+```bash
+python src/run_tests.py
 ```
 
 Expected console output:
