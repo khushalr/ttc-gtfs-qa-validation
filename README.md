@@ -10,7 +10,7 @@ This project demonstrates how to turn raw transit schedule data into a structure
 - reproducible CSV reporting
 - automated tests and CI
 
----
+Transit analytics quality depends on schedule data quality. If GTFS keys or relationships are broken, downstream analysis can be misleading (route-level summaries, trip-level KPIs, stop-level coverage, etc.).
 
 ## Why this matters (analytics/business value)
 
@@ -96,10 +96,11 @@ ttc-gtfs-qa-validation/
 │   └── test_validators.py
 ├── pytest.ini
 ├── requirements.txt
+├── pytest.ini
 └── README.md
 ```
 
----
+## Input files
 
 ## How to run
 
@@ -125,8 +126,6 @@ Optional:
 ### 3) Execute pipeline
 ```bash
 python src/run_tests.py
-# or
-PYTHONPATH=src python -m ttc_gtfs_qa.cli
 ```
 
 ### 4) Run tests
@@ -156,7 +155,7 @@ To add a new rule:
 
 This keeps additions simple and beginner-friendly while preserving a professional, modular structure.
 
----
+## Optional future improvements
 
 ## Future improvements
 
