@@ -1,24 +1,19 @@
+"""Referential integrity checks for GTFS relationships."""
+
+from __future__ import annotations
+
 import pandas as pd
 
 
-def find_orphan_route_ids(trips: pd.DataFrame, routes: pd.DataFrame) -> pd.DataFrame:
-    """Return trips rows whose route_id does not exist in routes."""
-    return trips[~trips["route_id"].isin(routes["route_id"])]
+def orphan_foreign_keys(
+    child_df: pd.DataFrame,
+    child_column: str,
+    parent_df: pd.DataFrame,
+    parent_column: str,
+) -> pd.DataFrame:
+    """Return child records whose foreign key does not exist in the parent table."""
+    if child_column not in child_df.columns or parent_column not in parent_df.columns:
+        return child_df.iloc[0:0].copy()
 
-
-def find_orphan_trip_ids(stop_times: pd.DataFrame, trips: pd.DataFrame) -> pd.DataFrame:
-    """Return stop_times rows whose trip_id does not exist in trips."""
-    return stop_times[~stop_times["trip_id"].isin(trips["trip_id"])]
-
-
-def find_orphan_stop_ids(stop_times: pd.DataFrame, stops: pd.DataFrame) -> pd.DataFrame:
-    """Return stop_times rows whose stop_id does not exist in stops."""
-    return stop_times[~stop_times["stop_id"].isin(stops["stop_id"])]
-def find_orphan_stop_ids(stop_times: pd.DataFrame, stops: pd.DataFrame) -> pd.DataFrame:
-    """Return stop_times rows whose stop_id is missing in stops."""
-    return stop_times[~stop_times["stop_id"].isin(stops["stop_id"])]
-
-
-def find_orphan_route_ids(trips: pd.DataFrame, routes: pd.DataFrame) -> pd.DataFrame:
-    """Return trips rows whose route_id is missing in routes."""
-    return trips[~trips["route_id"].isin(routes["route_id"])]
+    parent_keys = parent_df[parent_column].dropna().unique()
+    return child_df[~child_df[child_column].isin(parent_keys)].copy()
