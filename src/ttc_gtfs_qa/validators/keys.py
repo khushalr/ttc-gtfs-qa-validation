@@ -19,3 +19,6 @@ def find_duplicate_trip_ids(trips: pd.DataFrame) -> pd.DataFrame:
 def find_duplicate_trip_stop_sequence_pairs(stop_times: pd.DataFrame) -> pd.DataFrame:
     """Return stop_times rows with duplicated (trip_id, stop_sequence)."""
     return stop_times[stop_times.duplicated(["trip_id", "stop_sequence"], keep=False)]
+def find_duplicate_trip_ids(trips: pd.DataFrame) -> pd.DataFrame:
+    """Return all rows with duplicated trip_id values."""
+    return trips[trips.duplicated("trip_id", keep=False)]
