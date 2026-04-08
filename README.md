@@ -1,55 +1,100 @@
-# TTC GTFS QA Validation
+# TTC GTFS QA Validation Pipeline
 
-Lightweight Python + pandas project that validates GTFS static files and generates reproducible QA reports.
+Portfolio-ready Python project for validating public transit GTFS static feeds with **reproducible QA outputs**.
 
-This repo is designed as a student portfolio project for data analyst / researcher roles. It focuses on practical data-quality work: key integrity, referential integrity, required-field completeness, sequencing/time logic, and clean reporting outputs.
-
-## Why this project matters
+This project demonstrates how to turn raw transit schedule data into a structured data-quality process using:
+- **Python + pandas**
+- modular validation rules
+- referential integrity checks
+- anomaly detection checks
+- reproducible CSV reporting
+- automated tests and CI
 
 Transit analytics quality depends on schedule data quality. If GTFS keys or relationships are broken, downstream analysis can be misleading (route-level summaries, trip-level KPIs, stop-level coverage, etc.).
 
-This project turns raw GTFS tables into a repeatable QA pipeline with:
-- rule-level pass/fail status,
-- defect counts with severity,
-- summary metrics for quick review.
+## Why this matters (analytics/business value)
 
-## What is implemented (actual rule set)
+Transit analytics depends on trustworthy GTFS data. Small data errors can create big downstream problems:
+- broken trip matching in ridership analysis,
+- inaccurate stop-level dashboards,
+- schedule-based KPIs that are wrong,
+- failed map visualizations and routing logic.
 
-The current code runs **16 validation rules** from `src/ttc_gtfs_qa/engine.py`:
+This pipeline makes data-quality risks visible early by producing clear defect logs and summary metrics that can be shared with analysts, planners, and engineers.
 
-1. Duplicate `routes.route_id`
-2. Duplicate `trips.trip_id`
-3. Duplicate `stops.stop_id`
-4. Duplicate `(trip_id, stop_sequence)` in `stop_times`
-5. Missing required fields in `routes`
-6. Missing required fields in `trips`
-7. Missing required fields in `stop_times`
-8. Orphan `trips.route_id -> routes.route_id`
-9. Orphan `stop_times.trip_id -> trips.trip_id`
-10. Orphan `stop_times.stop_id -> stops.stop_id`
-11. Non-increasing `stop_sequence` within `trip_id`
-12. `departure_time < arrival_time` or invalid times
-13. Invalid stop latitude/longitude ranges
-14. Route-trip consistency check (`route_id`)
-15. `trips.service_id` not found in `calendar`/`calendar_dates` (when files exist)
-16. `trips.shape_id` not found in `shapes` (when files exist)
+---
+
+## 30-second recruiter summary
+
+- Built a modular GTFS QA pipeline in Python/pandas with **16 validation rules** across primary keys, required fields, referential integrity, sequencing, time logic, and domain/range checks.
+- Implemented reproducible outputs (`summary_report.csv`, `defect_log.csv`, `metrics_report.csv`) with severities and affected record counts.
+- Added unit tests with `pytest` and CI automation using GitHub Actions.
+- Designed rule architecture to be easy to extend for additional agencies or datasets.
+
+---
+
+## Implemented validation checks
+
+### 1) Primary key checks
+- Duplicate `routes.route_id`
+- Duplicate `trips.trip_id`
+- Duplicate `stops.stop_id`
+- Duplicate composite key `stop_times (trip_id, stop_sequence)`
+
+### 2) Required field checks
+- Missing required values in `routes`
+- Missing required values in `trips`
+- Missing required values in `stop_times`
+
+### 3) Referential integrity checks
+- `trips.route_id -> routes.route_id`
+- `stop_times.trip_id -> trips.trip_id`
+- `stop_times.stop_id -> stops.stop_id`
+
+### 4) Sequence/time logic checks
+- `stop_sequence` strictly increases within each `trip_id`
+- `departure_time >= arrival_time`
+
+### 5) Domain/range and consistency checks
+- Valid `stop_lat` / `stop_lon` ranges
+- Route-trip consistency
+- `service_id` relationship validation with `calendar.txt` / `calendar_dates.txt` (if present)
+- `shape_id` consistency with `shapes.txt` (if present)
+
+---
 
 ## Project structure
 
 ```text
 ttc-gtfs-qa-validation/
-├── .github/workflows/ci.yml
-├── examples/sample_reports/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── data/
+│   └── gtfs_static/                  # input GTFS files (not committed)
+├── examples/
+│   └── sample_reports/                # sample output CSVs for portfolio screenshots
+├── outputs/                          # generated after running pipeline
 ├── src/
-│   ├── run_tests.py
+│   ├── run_tests.py                  # compatibility runner
 │   └── ttc_gtfs_qa/
+│       ├── __init__.py
 │       ├── cli.py
 │       ├── engine.py
 │       ├── io.py
 │       ├── models.py
 │       ├── reporting.py
 │       └── validators/
+│           ├── base.py
+│           ├── calendar.py
+│           ├── domain.py
+│           ├── foreign_keys.py
+│           ├── keys.py
+│           └── sequencing.py
 ├── tests/
+│   ├── test_engine_reporting.py
+│   └── test_validators.py
+├── pytest.ini
 ├── requirements.txt
 ├── pytest.ini
 └── README.md
@@ -57,70 +102,73 @@ ttc-gtfs-qa-validation/
 
 ## Input files
 
-Required GTFS files in `data/gtfs_static/`:
-- `routes.txt`
-- `trips.txt`
-- `stops.txt`
-- `stop_times.txt`
+## How to run
 
-Optional (used only if present):
-- `calendar.txt`
-- `calendar_dates.txt`
-- `shapes.txt`
-
-## Quick start
-
+### 1) Setup
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Run validation:
+### 2) Add GTFS input files
+Place these files in `data/gtfs_static/`:
+- `routes.txt`
+- `trips.txt`
+- `stops.txt`
+- `stop_times.txt`
 
+Optional:
+- `calendar.txt`
+- `calendar_dates.txt`
+- `shapes.txt`
+
+### 3) Execute pipeline
 ```bash
 python src/run_tests.py
 ```
 
-Run tests:
-
+### 4) Run tests
 ```bash
 pytest -q
 ```
 
+---
+
 ## Outputs
 
-Running the pipeline creates CSV files in `outputs/`:
+Running the pipeline writes:
+- `outputs/summary_report.csv` → one row per validation rule with Pass/Fail and affected records.
+- `outputs/defect_log.csv` → failed checks only, with severity and sample IDs.
+- `outputs/metrics_report.csv` → QA KPIs (total rules, pass rate, total affected records).
 
-- `summary_report.csv`
-  - one row per rule
-  - includes category, severity, status, affected record count, rule details
-- `defect_log.csv`
-  - failed rules only
-  - includes defect ID, rule ID, severity, affected records, sample IDs
-- `metrics_report.csv`
-  - high-level QA metrics (total rules, failed rules, pass rate, total affected records)
+Example files are included in `examples/sample_reports/`.
 
-Sample outputs are included in `examples/sample_reports/`.
+---
 
-## Testing and CI
+## Extending checks
 
-- Unit tests are in `tests/` and use `pytest`.
-- CI runs on push and pull requests via GitHub Actions (`.github/workflows/ci.yml`).
+To add a new rule:
+1. Create a function in `src/ttc_gtfs_qa/validators/`.
+2. Register it in `build_rules()` inside `src/ttc_gtfs_qa/engine.py`.
+3. Add/extend unit tests under `tests/`.
 
-## Keep it extendable (without overengineering)
-
-To add a rule:
-1. Add a function in `src/ttc_gtfs_qa/validators/`.
-2. Register it in `build_rules()` in `src/ttc_gtfs_qa/engine.py`.
-3. Add/update tests in `tests/`.
+This keeps additions simple and beginner-friendly while preserving a professional, modular structure.
 
 ## Optional future improvements
 
-- Persist rule-level historical trends across multiple feed snapshots.
-- Add configurable severity/threshold settings.
-- Add a small HTML summary view on top of CSV outputs.
+## Future improvements
 
-## License
+- Add trend analysis over multiple feed snapshots.
+- Add rule-level threshold configuration by agency.
+- Export HTML dashboard reports in addition to CSV.
+- Add optional Great Expectations integration for enterprise-style validation docs.
 
-MIT (see `LICENSE`).
+---
+
+## Suggested resume bullets
+
+- Built a modular **GTFS data-quality validation pipeline** in Python/pandas with 16 checks for primary keys, required fields, referential integrity, sequencing, and domain constraints.
+- Designed reproducible QA reporting outputs (summary, defect log, and metrics) with severity levels and affected-record counts for stakeholder-friendly data quality monitoring.
+- Implemented automated tests (`pytest`) and CI (GitHub Actions) to ensure reliability and maintainability of validation logic.
+- Structured the project as an extensible analytics codebase with clear rule registration, reusable validators, and professional documentation.
