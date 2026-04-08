@@ -1,0 +1,6 @@
+metric,value
+total_rules,16
+passed_rules,13
+failed_rules,3
+pass_rate_percent,81.25
+total_affected_records,4

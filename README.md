@@ -1,178 +1,126 @@
 # TTC GTFS QA Validation
 
-A small QA-style validation project for **TTC GTFS static feeds**.
+Lightweight Python + pandas project that validates GTFS static files and generates reproducible QA reports.
 
-This repo is built as an undergraduate-friendly portfolio project: clear checks, readable code, and CSV outputs that look like QA deliverables.
-A small QA-style data validation project for **TTC GTFS static feeds**.
+This repo is designed as a student portfolio project for data analyst / researcher roles. It focuses on practical data-quality work: key integrity, referential integrity, required-field completeness, sequencing/time logic, and clean reporting outputs.
 
-This repository is designed as an undergraduate portfolio project that demonstrates how to:
-- load real transit schedule data,
-- run repeatable validation checks,
-- and produce simple QA outputs (test results + defect log).
+## Why this project matters
 
----
+Transit analytics quality depends on schedule data quality. If GTFS keys or relationships are broken, downstream analysis can be misleading (route-level summaries, trip-level KPIs, stop-level coverage, etc.).
 
-## Project Scope
+This project turns raw GTFS tables into a repeatable QA pipeline with:
+- rule-level pass/fail status,
+- defect counts with severity,
+- summary metrics for quick review.
 
-The validator currently reads:
-The current script validates four GTFS files:
-- `routes.txt`
-- `trips.txt`
-- `stops.txt`
-- `stop_times.txt`
+## What is implemented (actual rule set)
 
----
+The current code runs **16 validation rules** from `src/ttc_gtfs_qa/engine.py`:
 
-## Validation Rules (Plain English)
+1. Duplicate `routes.route_id`
+2. Duplicate `trips.trip_id`
+3. Duplicate `stops.stop_id`
+4. Duplicate `(trip_id, stop_sequence)` in `stop_times`
+5. Missing required fields in `routes`
+6. Missing required fields in `trips`
+7. Missing required fields in `stop_times`
+8. Orphan `trips.route_id -> routes.route_id`
+9. Orphan `stop_times.trip_id -> trips.trip_id`
+10. Orphan `stop_times.stop_id -> stops.stop_id`
+11. Non-increasing `stop_sequence` within `trip_id`
+12. `departure_time < arrival_time` or invalid times
+13. Invalid stop latitude/longitude ranges
+14. Route-trip consistency check (`route_id`)
+15. `trips.service_id` not found in `calendar`/`calendar_dates` (when files exist)
+16. `trips.shape_id` not found in `shapes` (when files exist)
 
-The script runs 8 rules:
-
-1. **R-01 Duplicate `route_id`**  
-   Every `route_id` should appear only once in `routes.txt`.
-2. **R-02 Duplicate `stop_id`**  
-   Every `stop_id` should appear only once in `stops.txt`.
-3. **R-03 Duplicate `trip_id`**  
-   Every `trip_id` should appear only once in `trips.txt`.
-4. **R-04 Duplicate (`trip_id`, `stop_sequence`)**  
-   In `stop_times.txt`, a trip should not repeat the same `stop_sequence` value.
-5. **R-05 Foreign key check: `trips.route_id -> routes.route_id`**  
-   Every `route_id` used by `trips.txt` must exist in `routes.txt`.
-6. **R-06 Foreign key check: `stop_times.trip_id -> trips.trip_id`**  
-   Every `trip_id` used by `stop_times.txt` must exist in `trips.txt`.
-7. **R-07 Foreign key check: `stop_times.stop_id -> stops.stop_id`**  
-   Every `stop_id` used by `stop_times.txt` must exist in `stops.txt`.
-8. **R-08 `stop_sequence` order within each trip**  
-   For each trip, `stop_sequence` should never decrease as rows progress.
-> Note: The script currently reads these four files only. It does **not** read `calendar.txt` or `calendar_dates.txt` yet.
-
----
-
-## Implemented QA Checks
-
-The script (`src/run_tests.py`) runs 4 checks:
-
-1. **TC-12 – Duplicate `trip_id` check** (in `trips.txt`)
-2. **TC-05 – Orphan `stop_id` check** (in `stop_times.txt` vs `stops.txt`)
-3. **TC-04 – Stop sequence ordering check** (within each `trip_id` in `stop_times.txt`)
-4. **TC-02 – Orphan `route_id` check** (in `trips.txt` vs `routes.txt`)
-
-Each check is recorded as Pass/Fail and, when failing, added to a defect log with severity and count.
-
----
-
-## Project Structure
+## Project structure
 
 ```text
 ttc-gtfs-qa-validation/
-├── data/
-│   └── gtfs_static/           # place GTFS .txt files here (not committed)
-├── outputs/                   # generated reports (not committed)
-├── outputs/                   # generated after running tests (not committed)
+├── .github/workflows/ci.yml
+├── examples/sample_reports/
 ├── src/
-│   ├── run_tests.py           # compatibility entrypoint
+│   ├── run_tests.py
 │   └── ttc_gtfs_qa/
 │       ├── cli.py
+│       ├── engine.py
 │       ├── io.py
+│       ├── models.py
 │       ├── reporting.py
 │       └── validators/
-│           ├── foreign_keys.py
-│           ├── keys.py
-│           └── sequencing.py
-│   └── run_tests.py           # main validation script
+├── tests/
 ├── requirements.txt
+├── pytest.ini
 └── README.md
 ```
 
----
+## Input files
 
-## Setup
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Put GTFS files in:
-- `data/gtfs_static/routes.txt`
-- `data/gtfs_static/trips.txt`
-- `data/gtfs_static/stops.txt`
-- `data/gtfs_static/stop_times.txt`
-### 1) Create and activate a virtual environment (recommended)
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### 2) Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3) Add GTFS files
-
-Place the following files in `data/gtfs_static/`:
+Required GTFS files in `data/gtfs_static/`:
 - `routes.txt`
 - `trips.txt`
 - `stops.txt`
 - `stop_times.txt`
 
----
+Optional (used only if present):
+- `calendar.txt`
+- `calendar_dates.txt`
+- `shapes.txt`
 
-## Run
+## Quick start
 
-From repo root:
-From the repository root (either command works):
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Run validation:
 
 ```bash
 python src/run_tests.py
-# or
-PYTHONPATH=src python -m ttc_gtfs_qa.cli
 ```
 
-From the repository root:
+Run tests:
 
 ```bash
-python src/run_tests.py
+pytest -q
 ```
-
-Expected console output:
-- `Loading GTFS data...`
-- `Testing complete.`
-- paths to generated CSV outputs
-
----
 
 ## Outputs
 
-After execution, two files are created:
+Running the pipeline creates CSV files in `outputs/`:
 
-1. `outputs/summary_report.csv`  
-   Columns: `Rule ID`, `Rule`, `Plain English`, `Result`, `Issue Count`
-2. `outputs/defect_log.csv`  
-   Columns: `Defect ID`, `Rule ID`, `Title`, `Dataset`, `Severity`, `Count`
+- `summary_report.csv`
+  - one row per rule
+  - includes category, severity, status, affected record count, rule details
+- `defect_log.csv`
+  - failed rules only
+  - includes defect ID, rule ID, severity, affected records, sample IDs
+- `metrics_report.csv`
+  - high-level QA metrics (total rules, failed rules, pass rate, total affected records)
 
-If all rules pass, `defect_log.csv` will contain headers only.
-After running, the script creates:
+Sample outputs are included in `examples/sample_reports/`.
 
-- `outputs/test_results.csv`  
-  Columns: `Test Case`, `Description`, `Result`
+## Testing and CI
 
-- `outputs/defect_log.csv`  
-  Columns: `Defect ID`, `Title`, `Dataset`, `Severity`, `Count`
+- Unit tests are in `tests/` and use `pytest`.
+- CI runs on push and pull requests via GitHub Actions (`.github/workflows/ci.yml`).
 
-If all tests pass, `defect_log.csv` may contain headers only.
+## Keep it extendable (without overengineering)
 
----
+To add a rule:
+1. Add a function in `src/ttc_gtfs_qa/validators/`.
+2. Register it in `build_rules()` in `src/ttc_gtfs_qa/engine.py`.
+3. Add/update tests in `tests/`.
 
-## Why this project is useful
+## Optional future improvements
 
-This project shows practical QA/data skills:
-- data integrity validation,
-- traceable test case IDs,
-- defect logging with severity and counts,
-- reproducible execution via a single script.
+- Persist rule-level historical trends across multiple feed snapshots.
+- Add configurable severity/threshold settings.
+- Add a small HTML summary view on top of CSV outputs.
 
-It is intentionally simple and readable so it can be extended in future phases.
+## License
+
+MIT (see `LICENSE`).
