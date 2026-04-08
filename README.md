@@ -154,21 +154,3 @@ To add a new rule:
 3. Add/extend unit tests under `tests/`.
 
 This keeps additions simple and beginner-friendly while preserving a professional, modular structure.
-
-## Optional future improvements
-
-## Future improvements
-
-- Add trend analysis over multiple feed snapshots.
-- Add rule-level threshold configuration by agency.
-- Export HTML dashboard reports in addition to CSV.
-- Add optional Great Expectations integration for enterprise-style validation docs.
-
----
-
-## Suggested resume bullets
-
-- Built a modular **GTFS data-quality validation pipeline** in Python/pandas with 16 checks for primary keys, required fields, referential integrity, sequencing, and domain constraints.
-- Designed reproducible QA reporting outputs (summary, defect log, and metrics) with severity levels and affected-record counts for stakeholder-friendly data quality monitoring.
-- Implemented automated tests (`pytest`) and CI (GitHub Actions) to ensure reliability and maintainability of validation logic.
-- Structured the project as an extensible analytics codebase with clear rule registration, reusable validators, and professional documentation.
