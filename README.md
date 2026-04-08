@@ -1,178 +1,175 @@
-# TTC GTFS QA Validation
+# TTC GTFS QA Validation Pipeline
 
-A small QA-style validation project for **TTC GTFS static feeds**.
+Portfolio-ready Python project for validating public transit GTFS static feeds with **reproducible QA outputs**.
 
-This repo is built as an undergraduate-friendly portfolio project: clear checks, readable code, and CSV outputs that look like QA deliverables.
-A small QA-style data validation project for **TTC GTFS static feeds**.
-
-This repository is designed as an undergraduate portfolio project that demonstrates how to:
-- load real transit schedule data,
-- run repeatable validation checks,
-- and produce simple QA outputs (test results + defect log).
-
----
-
-## Project Scope
-
-The validator currently reads:
-The current script validates four GTFS files:
-- `routes.txt`
-- `trips.txt`
-- `stops.txt`
-- `stop_times.txt`
+This project demonstrates how to turn raw transit schedule data into a structured data-quality process using:
+- **Python + pandas**
+- modular validation rules
+- referential integrity checks
+- anomaly detection checks
+- reproducible CSV reporting
+- automated tests and CI
 
 ---
 
-## Validation Rules (Plain English)
+## Why this matters (analytics/business value)
 
-The script runs 8 rules:
+Transit analytics depends on trustworthy GTFS data. Small data errors can create big downstream problems:
+- broken trip matching in ridership analysis,
+- inaccurate stop-level dashboards,
+- schedule-based KPIs that are wrong,
+- failed map visualizations and routing logic.
 
-1. **R-01 Duplicate `route_id`**  
-   Every `route_id` should appear only once in `routes.txt`.
-2. **R-02 Duplicate `stop_id`**  
-   Every `stop_id` should appear only once in `stops.txt`.
-3. **R-03 Duplicate `trip_id`**  
-   Every `trip_id` should appear only once in `trips.txt`.
-4. **R-04 Duplicate (`trip_id`, `stop_sequence`)**  
-   In `stop_times.txt`, a trip should not repeat the same `stop_sequence` value.
-5. **R-05 Foreign key check: `trips.route_id -> routes.route_id`**  
-   Every `route_id` used by `trips.txt` must exist in `routes.txt`.
-6. **R-06 Foreign key check: `stop_times.trip_id -> trips.trip_id`**  
-   Every `trip_id` used by `stop_times.txt` must exist in `trips.txt`.
-7. **R-07 Foreign key check: `stop_times.stop_id -> stops.stop_id`**  
-   Every `stop_id` used by `stop_times.txt` must exist in `stops.txt`.
-8. **R-08 `stop_sequence` order within each trip**  
-   For each trip, `stop_sequence` should never decrease as rows progress.
-> Note: The script currently reads these four files only. It does **not** read `calendar.txt` or `calendar_dates.txt` yet.
+This pipeline makes data-quality risks visible early by producing clear defect logs and summary metrics that can be shared with analysts, planners, and engineers.
 
 ---
 
-## Implemented QA Checks
+## 30-second recruiter summary
 
-The script (`src/run_tests.py`) runs 4 checks:
-
-1. **TC-12 – Duplicate `trip_id` check** (in `trips.txt`)
-2. **TC-05 – Orphan `stop_id` check** (in `stop_times.txt` vs `stops.txt`)
-3. **TC-04 – Stop sequence ordering check** (within each `trip_id` in `stop_times.txt`)
-4. **TC-02 – Orphan `route_id` check** (in `trips.txt` vs `routes.txt`)
-
-Each check is recorded as Pass/Fail and, when failing, added to a defect log with severity and count.
+- Built a modular GTFS QA pipeline in Python/pandas with **16 validation rules** across primary keys, required fields, referential integrity, sequencing, time logic, and domain/range checks.
+- Implemented reproducible outputs (`summary_report.csv`, `defect_log.csv`, `metrics_report.csv`) with severities and affected record counts.
+- Added unit tests with `pytest` and CI automation using GitHub Actions.
+- Designed rule architecture to be easy to extend for additional agencies or datasets.
 
 ---
 
-## Project Structure
+## Implemented validation checks
+
+### 1) Primary key checks
+- Duplicate `routes.route_id`
+- Duplicate `trips.trip_id`
+- Duplicate `stops.stop_id`
+- Duplicate composite key `stop_times (trip_id, stop_sequence)`
+
+### 2) Required field checks
+- Missing required values in `routes`
+- Missing required values in `trips`
+- Missing required values in `stop_times`
+
+### 3) Referential integrity checks
+- `trips.route_id -> routes.route_id`
+- `stop_times.trip_id -> trips.trip_id`
+- `stop_times.stop_id -> stops.stop_id`
+
+### 4) Sequence/time logic checks
+- `stop_sequence` strictly increases within each `trip_id`
+- `departure_time >= arrival_time`
+
+### 5) Domain/range and consistency checks
+- Valid `stop_lat` / `stop_lon` ranges
+- Route-trip consistency
+- `service_id` relationship validation with `calendar.txt` / `calendar_dates.txt` (if present)
+- `shape_id` consistency with `shapes.txt` (if present)
+
+---
+
+## Project structure
 
 ```text
 ttc-gtfs-qa-validation/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── data/
-│   └── gtfs_static/           # place GTFS .txt files here (not committed)
-├── outputs/                   # generated reports (not committed)
-├── outputs/                   # generated after running tests (not committed)
+│   └── gtfs_static/                  # input GTFS files (not committed)
+├── examples/
+│   └── sample_reports/                # sample output CSVs for portfolio screenshots
+├── outputs/                          # generated after running pipeline
 ├── src/
-│   ├── run_tests.py           # compatibility entrypoint
+│   ├── run_tests.py                  # compatibility runner
 │   └── ttc_gtfs_qa/
+│       ├── __init__.py
 │       ├── cli.py
+│       ├── engine.py
 │       ├── io.py
+│       ├── models.py
 │       ├── reporting.py
 │       └── validators/
+│           ├── base.py
+│           ├── calendar.py
+│           ├── domain.py
 │           ├── foreign_keys.py
 │           ├── keys.py
 │           └── sequencing.py
-│   └── run_tests.py           # main validation script
+├── tests/
+│   ├── test_engine_reporting.py
+│   └── test_validators.py
+├── pytest.ini
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Setup
+## How to run
 
+### 1) Setup
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Put GTFS files in:
-- `data/gtfs_static/routes.txt`
-- `data/gtfs_static/trips.txt`
-- `data/gtfs_static/stops.txt`
-- `data/gtfs_static/stop_times.txt`
-### 1) Create and activate a virtual environment (recommended)
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### 2) Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3) Add GTFS files
-
-Place the following files in `data/gtfs_static/`:
+### 2) Add GTFS input files
+Place these files in `data/gtfs_static/`:
 - `routes.txt`
 - `trips.txt`
 - `stops.txt`
 - `stop_times.txt`
 
----
+Optional:
+- `calendar.txt`
+- `calendar_dates.txt`
+- `shapes.txt`
 
-## Run
-
-From repo root:
-From the repository root (either command works):
-
+### 3) Execute pipeline
 ```bash
 python src/run_tests.py
 # or
 PYTHONPATH=src python -m ttc_gtfs_qa.cli
 ```
 
-From the repository root:
-
+### 4) Run tests
 ```bash
-python src/run_tests.py
+pytest -q
 ```
-
-Expected console output:
-- `Loading GTFS data...`
-- `Testing complete.`
-- paths to generated CSV outputs
 
 ---
 
 ## Outputs
 
-After execution, two files are created:
+Running the pipeline writes:
+- `outputs/summary_report.csv` → one row per validation rule with Pass/Fail and affected records.
+- `outputs/defect_log.csv` → failed checks only, with severity and sample IDs.
+- `outputs/metrics_report.csv` → QA KPIs (total rules, pass rate, total affected records).
 
-1. `outputs/summary_report.csv`  
-   Columns: `Rule ID`, `Rule`, `Plain English`, `Result`, `Issue Count`
-2. `outputs/defect_log.csv`  
-   Columns: `Defect ID`, `Rule ID`, `Title`, `Dataset`, `Severity`, `Count`
-
-If all rules pass, `defect_log.csv` will contain headers only.
-After running, the script creates:
-
-- `outputs/test_results.csv`  
-  Columns: `Test Case`, `Description`, `Result`
-
-- `outputs/defect_log.csv`  
-  Columns: `Defect ID`, `Title`, `Dataset`, `Severity`, `Count`
-
-If all tests pass, `defect_log.csv` may contain headers only.
+Example files are included in `examples/sample_reports/`.
 
 ---
 
-## Why this project is useful
+## Extending checks
 
-This project shows practical QA/data skills:
-- data integrity validation,
-- traceable test case IDs,
-- defect logging with severity and counts,
-- reproducible execution via a single script.
+To add a new rule:
+1. Create a function in `src/ttc_gtfs_qa/validators/`.
+2. Register it in `build_rules()` inside `src/ttc_gtfs_qa/engine.py`.
+3. Add/extend unit tests under `tests/`.
 
-It is intentionally simple and readable so it can be extended in future phases.
+This keeps additions simple and beginner-friendly while preserving a professional, modular structure.
+
+---
+
+## Future improvements
+
+- Add trend analysis over multiple feed snapshots.
+- Add rule-level threshold configuration by agency.
+- Export HTML dashboard reports in addition to CSV.
+- Add optional Great Expectations integration for enterprise-style validation docs.
+
+---
+
+## Suggested resume bullets
+
+- Built a modular **GTFS data-quality validation pipeline** in Python/pandas with 16 checks for primary keys, required fields, referential integrity, sequencing, and domain constraints.
+- Designed reproducible QA reporting outputs (summary, defect log, and metrics) with severity levels and affected-record counts for stakeholder-friendly data quality monitoring.
+- Implemented automated tests (`pytest`) and CI (GitHub Actions) to ensure reliability and maintainability of validation logic.
+- Structured the project as an extensible analytics codebase with clear rule registration, reusable validators, and professional documentation.

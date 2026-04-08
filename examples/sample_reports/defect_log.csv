@@ -1,0 +1,4 @@
+defect_id,rule_id,severity,dataset,affected_records,sample_record_count,sample_record_ids
+DEF-001,R-004,High,stop_times.txt,2,2,T1
+DEF-002,R-008,High,trips.txt,1,1,999
+DEF-003,R-011,High,stop_times.txt,1,1,T1

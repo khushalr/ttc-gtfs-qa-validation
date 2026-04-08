@@ -1,3 +1,5 @@
+"""Compatibility runner for local execution."""
+
 from ttc_gtfs_qa.cli import main
 
 
