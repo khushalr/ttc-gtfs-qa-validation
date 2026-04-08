@@ -1,6 +1,6 @@
 # TTC GTFS QA Validation Pipeline
 
-Portfolio-ready Python project for validating public transit GTFS static feeds with **reproducible QA outputs**.
+Python project for validating public transit GTFS static feeds with **reproducible QA outputs**.
 
 This project demonstrates how to turn raw transit schedule data into a structured data-quality process using:
 - **Python + pandas**
